@@ -45,7 +45,7 @@ h1{font:700 30px/1.1 var(--display);margin:0;letter-spacing:-.01em}.sub{color:va
 .seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}
 #stage{flex:1;min-height:0;background:var(--stage);position:relative;overflow:hidden;display:flex;justify-content:center;align-items:flex-start}
 #box{position:relative;overflow:hidden;background:#fff}#box.phone{border-radius:22px;border:6px solid var(--fg)}
-#frame{border:0;background:#fff;display:block;transform-origin:top left}
+#frame{border:0;background:#fff;display:block;transform-origin:top left;contain:strict}
 #note{position:absolute;left:12px;right:12px;bottom:12px;max-width:460px;margin:0 auto;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;box-shadow:0 8px 28px rgba(0,0,0,.18);font-size:13.5px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 #note p{margin:0;flex:1;min-width:180px}#note strong{display:block;font-family:var(--display)}
 .hint{font-size:12px;color:var(--muted);padding:4px 12px;background:var(--surface);border-top:1px solid var(--line);padding-bottom:max(4px,env(safe-area-inset-bottom,0px));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -192,7 +192,7 @@ function freshFrame(sb){var old=$('frame'),f=document.createElement('iframe');f.
   f.setAttribute('allow','fullscreen; clipboard-write');f.setAttribute('referrerpolicy','strict-origin-when-cross-origin');old.parentNode.replaceChild(f,old);return f}
 function load(it){
   clearTimeout(timer);$('note').hidden=true;loaded=false;
-  if(!it.url){var f=freshFrame(SB_FILE);f.srcdoc=it.code;$('safari').hidden=true;layout();return}
+  if(!it.url){var f=freshFrame(SB_FILE);f.srcdoc=it.code;$('safari').hidden=true;layout(true);return}
   var f=freshFrame(SB_LINK),u=new URL(it.url),host=u.hostname;
   $('safari').href=it.url;$('noteOpen').href=it.url;$('safari').hidden=false;
   if(BLOCKS.test(host)){note('This site does not allow embedding','It sends a header that stops other apps from showing it inside a frame. Open it in Safari instead.')}
@@ -203,29 +203,40 @@ function load(it){
     if(!same&&$('note').hidden)setTimeout(function(){if(cur===it&&$('note').hidden)$('hint').textContent=hintText+'  ·  Blank? The site may block embedding: use Open in Safari.'},2000);
   };
   timer=setTimeout(function(){if(!loaded&&cur===it)note('Still loading…','The site is slow or may refuse to be shown inside another app. You can keep waiting or open it in Safari.')},9000);
-  f.src=it.url;layout();
+  f.src=it.url;layout(true);
 }
 function openItem(it){cur=it;$('vname').textContent=it.name;$('shelf').style.display='none';$('viewer').classList.add('on');load(it)}
 function closeViewer(){clearTimeout(timer);freshFrame(SB_FILE);$('viewer').classList.remove('on');$('shelf').style.display='';cur=null}
 $('back').onclick=closeViewer;$('reload').onclick=function(){if(cur)load(cur)};$('noteX').onclick=function(){$('note').hidden=true};
-document.querySelectorAll('[data-m]').forEach(function(b){b.onclick=function(){mode=b.dataset.m;document.querySelectorAll('[data-m]').forEach(function(x){x.setAttribute('aria-pressed',String(x===b))});layout()}});
-document.querySelectorAll('[data-w]').forEach(function(b){b.onclick=function(){dw=+b.dataset.w;document.querySelectorAll('[data-w]').forEach(function(x){x.setAttribute('aria-pressed',String(x===b))});localStorage.setItem('shelf-dw',dw);layout()}});
+document.querySelectorAll('[data-m]').forEach(function(b){b.onclick=function(){mode=b.dataset.m;document.querySelectorAll('[data-m]').forEach(function(x){x.setAttribute('aria-pressed',String(x===b))});layout(true)}});
+document.querySelectorAll('[data-w]').forEach(function(b){b.onclick=function(){dw=+b.dataset.w;document.querySelectorAll('[data-w]').forEach(function(x){x.setAttribute('aria-pressed',String(x===b))});localStorage.setItem('shelf-dw',dw);layout(true)}});
 var sw=+localStorage.getItem('shelf-dw');if(sw===1440)document.querySelector('[data-w="1440"]').click();
-var hintText='';
-function layout(){
+var hintText='',lastKey='',lastW=0,lastH=0,raf=0;
+var ZOOM=(function(){try{var d=document.createElement('div');d.style.zoom='0.5';return d.style.zoom==='0.5'&&!/Firefox/.test(navigator.userAgent)}catch(e){return false}})();
+function layout(force){
   var st=$('stage'),box=$('box'),fr=$('frame'),w=st.clientWidth,h=st.clientHeight;if(!w||!h)return;
-  box.className='';fr.style.transform='none';$('widthSeg').hidden=mode!=='desktop';
-  if(mode==='mobile'){var big=w>420,pw=Math.min(390,w-(big?24:0)),ph=Math.min(h-(big?20:0),844);if(big)box.className='phone';
-    var iw=big?pw-12:pw,ih=big?ph-12:ph;box.style.width=pw+'px';box.style.height=ph+'px';box.style.marginTop=big?'10px':'0';
-    fr.style.width=iw+'px';fr.style.height=ih+'px';hintText='Phone layout, '+Math.round(iw)+' px wide';}
-  else if(mode==='desktop'){var s=Math.min(1,w/dw);box.style.width=Math.round(dw*s)+'px';box.style.height=h+'px';box.style.marginTop='0';
-    fr.style.width=dw+'px';fr.style.height=Math.ceil(h/s)+'px';fr.style.transform='scale('+s+')';
-    hintText='Desktop layout at '+dw+' px, scaled to '+Math.round(s*100)+'%. Scroll inside the page; pinch to zoom.';}
-  else{box.style.width=w+'px';box.style.height=h+'px';box.style.marginTop='0';fr.style.width=w+'px';fr.style.height=h+'px';hintText='Full screen at your device width ('+w+' px)';}
+  /* ignore small height-only jitter from the iOS toolbar */
+  if(!force&&w===lastW&&Math.abs(h-lastH)<120&&lastKey.indexOf(mode+dw)===0)return;
+  var key=mode+dw+'|'+w+'|'+h+'|'+fr.id+(fr.dataset.k||'');
+  if(!force&&key===lastKey)return;lastKey=key;lastW=w;lastH=h;
+  $('widthSeg').hidden=mode!=='desktop';
+  var bc='',bw,bh,mt='0',fw,fh,z='',tf='none';
+  if(mode==='mobile'){var big=w>420,pw=Math.min(390,w-(big?24:0)),ph=Math.min(h-(big?20:0),844);if(big)bc='phone';
+    bw=pw;bh=ph;mt=big?'10px':'0';fw=big?pw-12:pw;fh=big?ph-12:ph;hintText='Phone layout, '+Math.round(fw)+' px wide';}
+  else if(mode==='desktop'){var s=Math.min(1,w/dw);bw=Math.round(dw*s);bh=h;fw=dw;fh=Math.min(Math.ceil(h/s),4000);
+    if(s<1){if(ZOOM)z=String(s);else tf='scale('+s+')'}
+    hintText='Desktop layout at '+dw+' px, scaled to '+Math.round(s*100)+'%. Scroll inside the page.';}
+  else{bw=w;bh=h;fw=w;fh=h;hintText='Full screen at your device width ('+w+' px)';}
+  if(box.className!==bc)box.className=bc;
+  box.style.cssText='width:'+bw+'px;height:'+bh+'px;margin-top:'+mt;
+  fr.style.cssText='width:'+fw+'px;height:'+fh+'px;zoom:'+(z||'normal')+';transform:'+tf+';will-change:auto';
   $('hint').textContent=hintText;
 }
-if(window.ResizeObserver)new ResizeObserver(layout).observe($('stage'));window.addEventListener('resize',layout);
-if('serviceWorker'in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(function(){});
+function schedule(){if(raf)return;raf=requestAnimationFrame(function(){raf=0;clearTimeout(schedule.t);schedule.t=setTimeout(function(){layout(false)},120)})}
+if(window.ResizeObserver)new ResizeObserver(schedule).observe($('stage'));
+window.addEventListener('orientationchange',function(){setTimeout(function(){layout(true)},300)});
+if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations)navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(x){x.unregister()})}).catch(function(){});
+if(window.caches&&caches.keys)caches.keys().then(function(k){k.forEach(function(n){caches.delete(n)})}).catch(function(){});
 openDB().then(refresh).then(function(){if(!items.length&&!localStorage.getItem('shelf-seeded')){localStorage.setItem('shelf-seeded','1');
   var it={id:'sample',name:'Sample: responsive card',code:SAMPLE,size:new Blob([SAMPLE]).size,added:Date.now(),sample:true};return put(it).then(refresh)}})
 .then(function(){var q=new URLSearchParams(location.search).get('url');if(q){$('linkIn').value=q;$('linkForm').requestSubmit()}});
