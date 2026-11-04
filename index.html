@@ -1,0 +1,233 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>HTML Shelf</title>
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Shelf">
+<meta name="theme-color" content="#f3f5f4" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#0f1816" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="icon" href="icon-192.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Public+Sans:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#f3f5f4;--surface:#fff;--fg:#14201d;--muted:#5d6b67;--line:#d8dfdc;--accent:#0b6e5c;--accent-fg:#fff;--warn:#b4351f;--stage:#e4e9e7;
+--display:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif;--body:'Public Sans','Segoe UI',system-ui,sans-serif;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1816;--surface:#17231f;--fg:#e6efec;--muted:#93a39e;--line:#26372f;--accent:#4fd1b0;--accent-fg:#06211a;--warn:#ff8a73;--stage:#0a1210;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1816;--surface:#17231f;--fg:#e6efec;--muted:#93a39e;--line:#26372f;--accent:#4fd1b0;--accent-fg:#06211a;--warn:#ff8a73;--stage:#0a1210;color-scheme:dark}
+*{box-sizing:border-box}html,body{height:100%;margin:0}[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font:15px/1.45 var(--body);padding:env(safe-area-inset-top,0) max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px));-webkit-text-size-adjust:100%}
+button,input,textarea{font:inherit;color:inherit}button{cursor:pointer}:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:9px 14px;font-weight:600;min-height:40px;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}.btn.danger{color:var(--warn)}.btn.small{padding:6px 10px;min-height:34px;font-size:13px}.btn.ghost{background:none}
+#app{height:100%;display:flex;flex-direction:column;min-height:0}
+#shelf{max-width:760px;width:100%;margin:0 auto;padding-block:20px 40px;overflow-y:auto;min-height:0;flex:1}
+.top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+h1{font:700 30px/1.1 var(--display);margin:0;letter-spacing:-.01em}.sub{color:var(--muted);margin:6px 0 18px}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+#linkForm{display:flex;gap:8px;margin-bottom:12px}
+#linkForm input,.field{flex:1;min-width:0;border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:var(--surface);min-height:40px;font-size:16px}
+#drop{border:1.5px dashed var(--line);border-radius:14px;padding:14px;color:var(--muted);text-align:center;margin-bottom:18px}#drop.over{border-color:var(--accent);color:var(--accent)}
+#paste{display:grid;gap:8px;margin-bottom:18px;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+#paste input,#paste textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:9px;background:var(--bg);font-size:16px}
+#paste textarea{min-height:140px;font:13px/1.4 ui-monospace,Menlo,Consolas,monospace;resize:vertical}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.list{display:grid;gap:10px;padding:0;margin:0;list-style:none}
+.item{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.item .open{flex:1;min-width:0;text-align:left;background:none;border:0;padding:0}
+.item .name{font:600 16px/1.25 var(--display);overflow-wrap:anywhere}.item .meta{color:var(--muted);font-size:12.5px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.tag{display:inline-block;font:600 10.5px var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--accent);border:1px solid currentColor;border-radius:5px;padding:0 5px;margin-left:8px;vertical-align:2px}
+.empty{color:var(--muted);text-align:center;padding:24px 0}
+.foot{display:flex;gap:8px;flex-wrap:wrap;margin-top:22px;padding-top:14px;border-top:1px solid var(--line);color:var(--muted);font-size:13px;align-items:center}
+.foot .sp{flex:1}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:9px 14px;border-radius:10px;font-size:13.5px;font-weight:600;z-index:9}
+#viewer{display:none;flex-direction:column;height:100%;min-height:0;margin-inline:calc(-1 * max(16px,env(safe-area-inset-left,0px)))}#viewer.on{display:flex}
+#bar{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface);border-bottom:1px solid var(--line);flex-wrap:wrap}
+#vname{font:600 15px var(--display);flex:1;min-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;background:var(--bg);padding:8px 12px;font-weight:600;font-size:13px;min-height:36px}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}
+#stage{flex:1;min-height:0;background:var(--stage);position:relative;overflow:hidden;display:flex;justify-content:center;align-items:flex-start}
+#box{position:relative;overflow:hidden;background:#fff}#box.phone{border-radius:22px;border:6px solid var(--fg)}
+#frame{border:0;background:#fff;display:block;transform-origin:top left}
+#note{position:absolute;left:12px;right:12px;bottom:12px;max-width:460px;margin:0 auto;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;box-shadow:0 8px 28px rgba(0,0,0,.18);font-size:13.5px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+#note p{margin:0;flex:1;min-width:180px}#note strong{display:block;font-family:var(--display)}
+.hint{font-size:12px;color:var(--muted);padding:4px 12px;background:var(--surface);border-top:1px solid var(--line);padding-bottom:max(4px,env(safe-area-inset-bottom,0px));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+</style></head><body>
+<div id="app">
+<main id="shelf">
+  <div class="top"><div><h1>HTML Shelf</h1><p class="sub">Keep HTML pages and live links on this device. Open any of them as a phone, a 1280&nbsp;px desktop, or full screen.</p></div>
+  <button class="btn small ghost" id="theme" type="button" aria-label="Switch theme">Theme</button></div>
+  <form id="linkForm" autocomplete="off"><input id="linkIn" type="url" inputmode="url" autocapitalize="off" spellcheck="false" placeholder="Open a link, e.g. example.com" aria-label="Website address"><button class="btn primary" type="submit">Open</button></form>
+  <div class="actions">
+    <button class="btn" id="addBtn" type="button">Add files</button>
+    <button class="btn" id="pasteBtn" type="button">Paste code</button>
+    <input id="fileIn" type="file" accept=".html,.htm,text/html" multiple hidden>
+  </div>
+  <form id="paste" hidden>
+    <input id="pName" placeholder="Name (optional)" aria-label="Name">
+    <textarea id="pCode" placeholder="Paste the full HTML here" aria-label="HTML code"></textarea>
+    <div class="row"><button class="btn primary" type="submit">Save and open</button><button class="btn" id="pCancel" type="button">Cancel</button></div>
+  </form>
+  <div id="drop">Drop .html files here</div>
+  <ul class="list" id="list"></ul>
+  <div class="foot"><span class="sp">Everything stays on this device.</span>
+    <button class="btn small" id="exportBtn" type="button">Export shelf</button>
+    <button class="btn small" id="importBtn" type="button">Import</button>
+    <input id="importIn" type="file" accept=".json,application/json" hidden></div>
+</main>
+<section id="viewer" aria-label="Viewer">
+  <div id="bar">
+    <button class="btn small" id="back" type="button">&larr; Shelf</button>
+    <div id="vname"></div>
+    <div class="seg" role="group" aria-label="View mode">
+      <button type="button" data-m="mobile" aria-pressed="true">Mobile</button>
+      <button type="button" data-m="desktop" aria-pressed="false">Desktop</button>
+      <button type="button" data-m="full" aria-pressed="false">Full</button>
+    </div>
+    <div class="seg" id="widthSeg" role="group" aria-label="Desktop width" hidden>
+      <button type="button" data-w="1280" aria-pressed="true">1280</button><button type="button" data-w="1440" aria-pressed="false">1440</button>
+    </div>
+    <button class="btn small" id="reload" type="button">Reload</button>
+    <a class="btn small" id="safari" target="_blank" rel="noopener" hidden>Open in Safari</a>
+  </div>
+  <div id="stage"><div id="box"><iframe id="frame" title="Preview"></iframe></div>
+    <div id="note" hidden><p><strong id="noteT"></strong><span id="noteB"></span></p><a class="btn small primary" id="noteOpen" target="_blank" rel="noopener">Open in Safari</a><button class="btn small" id="noteX" type="button">Dismiss</button></div></div>
+  <div class="hint" id="hint"></div>
+</section>
+</div>
+<div id="toast" hidden></div>
+<script>
+(function(){
+var $=function(id){return document.getElementById(id)};
+var mem=[],db=null,items=[],cur=null,mode='mobile',dw=1280,timer=null,loaded=false;
+var SB_FILE='allow-scripts allow-forms allow-modals allow-popups';
+var SB_LINK='allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals';
+/* sites known to refuse framing (X-Frame-Options / CSP frame-ancestors) */
+var BLOCKS=/(^|\.)(google\.[a-z.]+|youtube\.com|facebook\.com|instagram\.com|x\.com|twitter\.com|linkedin\.com|github\.com|gitlab\.com|amazon\.[a-z.]+|apple\.com|icloud\.com|microsoft\.com|live\.com|office\.com|paypal\.com|reddit\.com|netflix\.com|stripe\.com|notion\.so|figma\.com|chatgpt\.com|openai\.com|claude\.ai|bbc\.co\.uk|nytimes\.com|stackoverflow\.com|whatsapp\.com|tiktok\.com|vercel\.com|cloudflare\.com|slack\.com|dropbox\.com)$/i;
+
+function openDB(){return new Promise(function(res){try{var r=indexedDB.open('html-shelf',1);r.onupgradeneeded=function(){r.result.createObjectStore('files',{keyPath:'id'})};r.onsuccess=function(){db=r.result;res()};r.onerror=function(){res()}}catch(e){res()}})}
+function all(){return new Promise(function(res){if(!db)return res(mem.slice());try{var q=db.transaction('files').objectStore('files').getAll();q.onsuccess=function(){res(q.result||[])};q.onerror=function(){res(mem.slice())}}catch(e){res(mem.slice())}})}
+function put(it){return new Promise(function(res){if(!db){mem=mem.filter(function(x){return x.id!==it.id});mem.push(it);return res()}try{var t=db.transaction('files','readwrite');t.objectStore('files').put(it);t.oncomplete=res;t.onerror=res}catch(e){mem.push(it);res()}})}
+function del(id){return new Promise(function(res){if(!db){mem=mem.filter(function(x){return x.id!==id});return res()}try{var t=db.transaction('files','readwrite');t.objectStore('files').delete(id);t.oncomplete=res;t.onerror=res}catch(e){res()}})}
+
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+function titleOf(c,f){var m=/<title[^>]*>([^<]{1,80})<\/title>/i.exec(c);return(m&&m[1].trim())||f||'Untitled page'}
+function kb(n){return n<1024?n+' B':n<1048576?(n/1024).toFixed(1)+' KB':(n/1048576).toFixed(1)+' MB'}
+function when(t){try{return new Date(t).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'})}catch(e){return''}}
+function toast(m){var t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(function(){t.hidden=true},2600)}
+function addCode(code,name){var it={id:uid(),name:titleOf(code,name),code:code,size:new Blob([code]).size,added:Date.now()};return put(it).then(function(){return it})}
+function normUrl(s){s=(s||'').trim();if(!s)return null;if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(s))s='https://'+s.replace(/^\/+/,'');try{var u=new URL(s);if(!/^https?:$/.test(u.protocol)||!u.hostname.includes('.')&&u.hostname!=='localhost')return null;return u.href}catch(e){return null}}
+
+var SAMPLE='<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sample: responsive card</title><style>body{font-family:system-ui;margin:0;background:#0b6e5c;color:#fff;padding:24px}.g{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}.c{background:#ffffff22;border-radius:14px;padding:18px}@media(min-width:900px){h1{font-size:44px}}</style></head><body><h1>Hello from a saved page</h1><p>Switch between Mobile, Desktop and Full to see this layout respond. Cards stack on a phone and spread on a wide screen.</p><div class="g"><div class="c">One</div><div class="c">Two</div><div class="c">Three</div><div class="c">Four</div></div></body></html>';
+
+function render(){
+  var ul=$('list');ul.textContent='';
+  if(!items.length){var e=document.createElement('li');e.className='empty';e.textContent='Nothing saved yet. Open a link, add a file or paste code to start.';ul.appendChild(e);return}
+  items.sort(function(a,b){return b.added-a.added}).forEach(function(it){
+    var li=document.createElement('li');li.className='item';
+    var o=document.createElement('button');o.className='open';o.type='button';
+    var n=document.createElement('div');n.className='name';n.textContent=it.name;
+    var tg=it.url?'Link':it.sample?'Example':'';
+    if(tg){var t=document.createElement('span');t.className='tag';t.textContent=tg;n.appendChild(t)}
+    var m=document.createElement('div');m.className='meta';
+    m.textContent=it.url?(it.url.replace(/^https?:\/\//,'').replace(/\/$/,'')+' · '+when(it.added)):(kb(it.size)+' · '+when(it.added));
+    o.appendChild(n);o.appendChild(m);o.onclick=function(){openItem(it)};
+    var r=document.createElement('button');r.className='btn small';r.type='button';r.textContent='Rename';r.onclick=function(){rename(it,li)};
+    var d=document.createElement('button');d.className='btn small danger';d.type='button';d.textContent='Delete';var armed=false;
+    d.onclick=function(){if(!armed){armed=true;d.textContent='Tap to confirm';setTimeout(function(){armed=false;d.textContent='Delete'},3000);return}del(it.id).then(refresh)};
+    li.appendChild(o);li.appendChild(r);li.appendChild(d);ul.appendChild(li);
+  });
+}
+function rename(it,li){
+  var inp=document.createElement('input');inp.value=it.name;inp.className='field';inp.setAttribute('aria-label','New name');
+  li.textContent='';li.appendChild(inp);
+  var ok=document.createElement('button');ok.className='btn small primary';ok.type='button';ok.textContent='Save';
+  function done(){it.name=inp.value.trim()||it.name;put(it).then(refresh)}
+  ok.onclick=done;inp.onkeydown=function(e){if(e.key==='Enter')done();if(e.key==='Escape')render()};li.appendChild(ok);inp.focus();inp.select();
+}
+function refresh(){return all().then(function(a){items=a;render()})}
+function readFiles(files){var p=Promise.resolve(),last=null;Array.prototype.forEach.call(files,function(f){p=p.then(function(){return f.text()}).then(function(t){return addCode(t,f.name.replace(/\.html?$/i,''))}).then(function(it){last=it})});return p.then(refresh).then(function(){if(files.length===1&&last)openItem(last)})}
+
+$('linkForm').onsubmit=function(e){
+  e.preventDefault();var u=normUrl($('linkIn').value);
+  if(!u){toast('That does not look like a web address');return}
+  var ex=items.filter(function(x){return x.url===u})[0];
+  var p=ex?Promise.resolve(ex):(function(){var h=new URL(u).hostname.replace(/^www\./,'');var it={id:uid(),name:h,url:u,size:0,added:Date.now()};return put(it).then(function(){return it})})();
+  p.then(function(it){$('linkIn').value='';return refresh().then(function(){openItem(it)})});
+};
+$('addBtn').onclick=function(){$('fileIn').click()};
+$('fileIn').onchange=function(e){if(e.target.files.length)readFiles(e.target.files);e.target.value=''};
+$('pasteBtn').onclick=function(){var f=$('paste');f.hidden=!f.hidden;if(!f.hidden)$('pCode').focus()};
+$('pCancel').onclick=function(){$('paste').hidden=true};
+$('paste').onsubmit=function(e){e.preventDefault();var c=$('pCode').value;if(!c.trim())return;addCode(c,$('pName').value.trim()).then(function(it){$('pCode').value='';$('pName').value='';$('paste').hidden=true;return refresh().then(function(){openItem(it)})})};
+var dz=$('drop');
+['dragenter','dragover'].forEach(function(n){document.addEventListener(n,function(e){e.preventDefault();dz.classList.add('over')})});
+['dragleave','drop'].forEach(function(n){document.addEventListener(n,function(e){e.preventDefault();dz.classList.remove('over')})});
+document.addEventListener('drop',function(e){if(e.dataTransfer&&e.dataTransfer.files.length)readFiles(e.dataTransfer.files)});
+
+/* export / import */
+$('exportBtn').onclick=function(){all().then(function(a){
+  var data=JSON.stringify({app:'html-shelf',version:1,exported:new Date().toISOString(),items:a.filter(function(x){return!x.sample})},null,1);
+  var b=new Blob([data],{type:'application/json'}),f='html-shelf-'+new Date().toISOString().slice(0,10)+'.json';
+  try{var file=new File([b],f,{type:'application/json'});if(navigator.canShare&&navigator.canShare({files:[file]})&&/iP(hone|ad)/.test(navigator.userAgent)){navigator.share({files:[file],title:'HTML Shelf export'}).catch(function(){});return}}catch(e){}
+  var a2=document.createElement('a');a2.href=URL.createObjectURL(b);a2.download=f;document.body.appendChild(a2);a2.click();setTimeout(function(){URL.revokeObjectURL(a2.href);a2.remove()},1000);
+})};
+$('importBtn').onclick=function(){$('importIn').click()};
+$('importIn').onchange=function(e){var f=e.target.files[0];e.target.value='';if(!f)return;
+  f.text().then(function(t){var d=JSON.parse(t),arr=Array.isArray(d)?d:d.items;if(!Array.isArray(arr))throw 0;
+    var have={};items.forEach(function(x){have[x.id]=x});var n=0,p=Promise.resolve();
+    arr.forEach(function(x){if(!x||!x.id||(!x.code&&!x.url))return;if(have[x.id]&&have[x.id].added>=x.added)return;n++;
+      var it={id:String(x.id),name:String(x.name||'Untitled'),added:+x.added||Date.now()};
+      if(x.url){var u=normUrl(x.url);if(!u)return;it.url=u;it.size=0}else{it.code=String(x.code);it.size=new Blob([it.code]).size}
+      p=p.then(function(){return put(it)})});
+    return p.then(refresh).then(function(){toast(n?'Imported '+n+' item'+(n>1?'s':''):'Nothing new to import')});
+  }).catch(function(){toast('That file is not a shelf export')});
+};
+
+/* theme */
+var th=localStorage.getItem('shelf-theme');if(th)document.documentElement.dataset.theme=th;
+$('theme').onclick=function(){var dark=document.documentElement.dataset.theme?document.documentElement.dataset.theme==='dark':matchMedia('(prefers-color-scheme:dark)').matches;
+  th=dark?'light':'dark';document.documentElement.dataset.theme=th;localStorage.setItem('shelf-theme',th)};
+
+/* viewer */
+function note(t,b){$('noteT').textContent=t;$('noteB').textContent=b;$('note').hidden=false}
+function freshFrame(sb){var old=$('frame'),f=document.createElement('iframe');f.id='frame';f.title='Preview';f.setAttribute('sandbox',sb);
+  f.setAttribute('allow','fullscreen; clipboard-write');f.setAttribute('referrerpolicy','strict-origin-when-cross-origin');old.parentNode.replaceChild(f,old);return f}
+function load(it){
+  clearTimeout(timer);$('note').hidden=true;loaded=false;
+  if(!it.url){var f=freshFrame(SB_FILE);f.srcdoc=it.code;$('safari').hidden=true;layout();return}
+  var f=freshFrame(SB_LINK),u=new URL(it.url),host=u.hostname;
+  $('safari').href=it.url;$('noteOpen').href=it.url;$('safari').hidden=false;
+  if(BLOCKS.test(host)){note('This site does not allow embedding','It sends a header that stops other apps from showing it inside a frame. Open it in Safari instead.')}
+  f.onload=function(){loaded=true;clearTimeout(timer);
+    /* same-origin pages can be checked directly; others get a short grace period */
+    var same=false,blank=false;try{var d=f.contentDocument;same=!!d;if(d){blank=!d.body||(!d.body.innerText.trim()&&!d.body.querySelector('img,svg,canvas,video,iframe'))}}catch(e){}
+    if(same&&blank)setTimeout(function(){try{var d=f.contentDocument;if(d&&d.body&&!d.body.innerText.trim()&&!d.body.querySelector('img,svg,canvas,video,iframe'))note('This page looks blank','It may need a sign-in or block embedding. Try Reload, or open it in Safari.')}catch(e){}},2500);
+    if(!same&&$('note').hidden)setTimeout(function(){if(cur===it&&$('note').hidden)$('hint').textContent=hintText+'  ·  Blank? The site may block embedding: use Open in Safari.'},2000);
+  };
+  timer=setTimeout(function(){if(!loaded&&cur===it)note('Still loading…','The site is slow or may refuse to be shown inside another app. You can keep waiting or open it in Safari.')},9000);
+  f.src=it.url;layout();
+}
+function openItem(it){cur=it;$('vname').textContent=it.name;$('shelf').style.display='none';$('viewer').classList.add('on');load(it)}
+function closeViewer(){clearTimeout(timer);freshFrame(SB_FILE);$('viewer').classList.remove('on');$('shelf').style.display='';cur=null}
+$('back').onclick=closeViewer;$('reload').onclick=function(){if(cur)load(cur)};$('noteX').onclick=function(){$('note').hidden=true};
+document.querySelectorAll('[data-m]').forEach(function(b){b.onclick=function(){mode=b.dataset.m;document.querySelectorAll('[data-m]').forEach(function(x){x.setAttribute('aria-pressed',String(x===b))});layout()}});
+document.querySelectorAll('[data-w]').forEach(function(b){b.onclick=function(){dw=+b.dataset.w;document.querySelectorAll('[data-w]').forEach(function(x){x.setAttribute('aria-pressed',String(x===b))});localStorage.setItem('shelf-dw',dw);layout()}});
+var sw=+localStorage.getItem('shelf-dw');if(sw===1440)document.querySelector('[data-w="1440"]').click();
+var hintText='';
+function layout(){
+  var st=$('stage'),box=$('box'),fr=$('frame'),w=st.clientWidth,h=st.clientHeight;if(!w||!h)return;
+  box.className='';fr.style.transform='none';$('widthSeg').hidden=mode!=='desktop';
+  if(mode==='mobile'){var big=w>420,pw=Math.min(390,w-(big?24:0)),ph=Math.min(h-(big?20:0),844);if(big)box.className='phone';
+    var iw=big?pw-12:pw,ih=big?ph-12:ph;box.style.width=pw+'px';box.style.height=ph+'px';box.style.marginTop=big?'10px':'0';
+    fr.style.width=iw+'px';fr.style.height=ih+'px';hintText='Phone layout, '+Math.round(iw)+' px wide';}
+  else if(mode==='desktop'){var s=Math.min(1,w/dw);box.style.width=Math.round(dw*s)+'px';box.style.height=h+'px';box.style.marginTop='0';
+    fr.style.width=dw+'px';fr.style.height=Math.ceil(h/s)+'px';fr.style.transform='scale('+s+')';
+    hintText='Desktop layout at '+dw+' px, scaled to '+Math.round(s*100)+'%. Scroll inside the page; pinch to zoom.';}
+  else{box.style.width=w+'px';box.style.height=h+'px';box.style.marginTop='0';fr.style.width=w+'px';fr.style.height=h+'px';hintText='Full screen at your device width ('+w+' px)';}
+  $('hint').textContent=hintText;
+}
+if(window.ResizeObserver)new ResizeObserver(layout).observe($('stage'));window.addEventListener('resize',layout);
+if('serviceWorker'in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(function(){});
+openDB().then(refresh).then(function(){if(!items.length&&!localStorage.getItem('shelf-seeded')){localStorage.setItem('shelf-seeded','1');
+  var it={id:'sample',name:'Sample: responsive card',code:SAMPLE,size:new Blob([SAMPLE]).size,added:Date.now(),sample:true};return put(it).then(refresh)}})
+.then(function(){var q=new URLSearchParams(location.search).get('url');if(q){$('linkIn').value=q;$('linkForm').requestSubmit()}});
+})();
+</script></body></html>
